@@ -15,8 +15,7 @@ $player = $_POST["player"];
 $new_move = $_POST["move"];
 
 if($id && $player && $new_move) {
-    $stmt = $conn->stmt_init();
-    $stmt->prepare("SELECT turn, moves FROM in_progress WHERE id=?");
+    $stmt = $conn->prepare("SELECT turn, moves FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $stmt->bind_result($turn, $moves);
@@ -25,9 +24,8 @@ if($id && $player && $new_move) {
     if($turn_converted == $player) {
         $moves .= ";" . $new_move;
         $stmt->close();
-        $stmt = $conn->stmt_init();
         $turn = !$turn;
-        $stmt->prepare("UPDATE in_progress SET turn=? moves=? last_move=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE in_progress SET turn=? moves=? last_move=? WHERE id=?");
         $stmt->bind_param("issi", $turn, $moves, $new_move, $id);
         $stmt->execute();
         echo "{\"result\":\"success\"}";
