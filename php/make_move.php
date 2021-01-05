@@ -14,7 +14,7 @@ $id = $_POST["id"];
 $player = $_POST["player"];
 $new_move = $_POST["move"];
 
-if($id && $player && $move) {
+if($id && $player && $new_move) {
     $stmt = $conn->stmt_init();
     $stmt->prepare("SELECT turn, moves FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
