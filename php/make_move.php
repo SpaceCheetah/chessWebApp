@@ -21,7 +21,8 @@ if($id && $player && $move) {
     $stmt->execute();
     $stmt->bind_result($turn, $moves);
     $stmt->fetch();
-    if($turn == $player) {
+    $turn_converted = $turn ? "white" : "black";
+    if($turn_converted == $player) {
         $moves .= ";" . $new_move;
         $stmt->close();
         $stmt = $conn->stmt_init();
