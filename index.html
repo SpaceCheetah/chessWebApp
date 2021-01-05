@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chess</title>
+        <link rel="stylesheet" href="/chess/css/chessboard-1.0.0.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src=/chess/js/chessboard-1.0.0.js></script>
+        <script src="/chess/js/chess.js"></script>
+        <script src="/chess/js/game.js"></script>
+    </head>
+    <body>
+        <div id="game">
+            <div id="board_holder">
+                <div id="board1"></div>
+            </div>
+            <div id="notation">
+                <div id="player_indicator">
+                    <span id="white_player">whitetest</span>
+                    <span id="vs">vs.</span>
+                    <span id="black_player">blacktest</span>
+                </div>
+                <div id="status"></div>
+            </div>
+        </div>
+        <dialog id="piece_chooser">
+            <form method="dialog">
+                <button value="q"><img></button>
+                <button value="n"><img></button>
+                <button value="r"><img></button>
+                <button value="b"><img></button>
+            </form>
+        </dialog>
+    </body>
+</html>
