@@ -1,9 +1,5 @@
 <?php
 header('Content-type:application/json;charset=utf-8');
-register_shutdown_function('shutdown');
-function shutdown() {
-    print_r(error_get_last());
-}
 
 $conn = mysqli_connect("p:localhost", "u312026651_chess", "cygUVHoUV4wH7GzhGdkslscN3w9apYidr", "u312026651_chess");
 if(!$conn) {
@@ -13,8 +9,9 @@ if(!$conn) {
 $id = $_POST["id"];
 $player = $_POST["player"];
 $new_move = $_POST["move"];
+$fen = $_POST["fen"];
 
-if($id && $player && $new_move) {
+if($id && $player && $new_move && $fen) {
     $stmt = $conn->prepare("SELECT turn, moves FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -25,8 +22,8 @@ if($id && $player && $new_move) {
         $moves .= ";" . $new_move;
         $stmt->close();
         $turn = !$turn;
-        $stmt = $conn->prepare("UPDATE in_progress SET turn=? moves=? last_move=? WHERE id=?");
-        $stmt->bind_param("issi", $turn, $moves, $new_move, $id);
+        $stmt = $conn->prepare("UPDATE in_progress SET turn=?, moves=?, last_move=?, FEN=? WHERE id=?");
+        $stmt->bind_param("isssi", $turn, $moves, $new_move, $fen, $id);
         $stmt->execute();
         echo "{\"result\":\"success\"}";
     }
