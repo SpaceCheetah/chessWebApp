@@ -4,9 +4,20 @@ var $status = null;
 var $notation = null;
 var dialog = null;
 var draggingAllowed = true;
-var gameHistory = null;
+var gameHistory = [];
 var promotionStart = null;
 var promotionTarget = null;
+var yourTurn = false;
+var moveUploaded = false;
+var uploadInterval = null;
+
+var urlParams = new URLSearchParams(window.location.search);
+var player = urlParams.get("player");
+var boardID = urlParams.get("id");
+
+var white_name = "";
+var black_name = "";
+var opponent_name = "";
 
 var wP = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==';
 var wN = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjMDAwIi8+PC9nPjwvc3ZnPg==';
@@ -22,7 +33,7 @@ var bQ = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAw
 var bK = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjYiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMjIuNSAyNXM0LjUtNy41IDMtMTAuNWMwIDAtMS0yLjUtMy0yLjVzLTMgMi41LTMgMi41Yy0xLjUgMyAzIDEwLjUgMyAxMC41IiBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjxwYXRoIGQ9Ik0xMS41IDM3YzUuNSAzLjUgMTUuNSAzLjUgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMFYzN3oiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMyIDI5LjVzOC41LTQgNi4wMy05LjY1QzM0LjE1IDE0IDI1IDE4IDIyLjUgMjQuNWwuMDEgMi4xLS4wMS0yLjFDMjAgMTggOS45MDYgMTQgNi45OTcgMTkuODVjLTIuNDk3IDUuNjUgNC44NTMgOSA0Ljg1MyA5IiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiIHN0cm9rZT0iI2VjZWNlYyIvPjwvZz48L3N2Zz4=';
 
 function onDragStart (source, piece, position, orientation) {
-    if(!draggingAllowed) return false;
+    if(!(draggingAllowed && yourTurn)) return false;
     // do not pick up pieces if the game is over
     if (game.game_over()) return false
   
@@ -52,14 +63,36 @@ function onDrop (source, target) {
         });
         return;
     }
-    updateStatus()
+    updateStatus();
+    setTimeout(uploadMove());
+    uploadInterval = setInterval(uploadMove, 1000);
+}
+
+function uploadMove() {
+    if(!moveUploaded) {
+        var uploadRequest = new Request("https://thegoodlifetravelguru.com/chess/php/make_move.php",
+            {method: 'POST', body: 'id=' + boardID + "&player=" + player + "&move=" + encodeURIComponent(gameHistory[gameHistory.length - 1]) + "&fen=" + encodeURIComponent(game.fen()) + "&move_num=" + gameHistory.length,
+            headers: {"Content-Type": "application/x-www-form-urlencoded"}});
+        fetch(uploadRequest)
+            .then(response => response.json()
+            .then(data => {
+                if(data.result == "success" && !moveUploaded) {
+                    moveUploaded = true;
+                    clearInterval(uploadInterval);
+                }
+            }));
+    }
 }
 
 function notationClicked(element) {
-    $(".notation_selected").removeClass("notation_selected");
     draggingAllowed = false;
     var moveNum = Number(element.parentNode.children[0].innerText) * 2 - 1;
     if(element.className == "black_move hover") moveNum ++;
+    goToHistory(moveNum, element);
+}
+
+function goToHistory(moveNum, element) {
+    $(".notation_selected").removeClass("notation_selected");
     if(moveNum != game.history().length) {
         game.reset();
         for(var i = 0; i < moveNum; i ++) {
@@ -77,32 +110,54 @@ function notationClicked(element) {
 
 function updateStatus () {
     var status = ''
-  
-    var moveColor = 'White'
-    if (game.turn() === 'b') {
-      moveColor = 'Black'
+
+    var game_turn = game.turn() == 'w'? "white": "black";
+    if(game_turn == player) {
+        yourTurn = true;
+        status = "Your move";
+        if(game.in_checkmate()) {
+            status = "Game over, you were checkmated";
+        }
     }
-  
-    // checkmate?
-    if (game.in_checkmate()) {
-      status = 'Game over, ' + moveColor + ' is in checkmate.'
-    }
-  
-    // draw?
-    else if (game.in_draw()) {
-      status = 'Game over, drawn position'
-    }
-  
-    // game still on
     else {
-      status = moveColor + ' to move'
-  
-      // check?
-      if (game.in_check()) {
-        status += ', ' + moveColor + ' is in check'
-      }
+        yourTurn = false;
+        status = opponent_name + " to move";
+        if(game.in_checkmate()) {
+            status = "Game over, you won!";
+        }
     }
 
+    if(game.in_check() && !game.in_checkmate()) {
+        status += ", check";
+    }
+    if(game.in_stalemate()) {
+        status = "Game over, draw by stalemate";
+    }
+    else if(game.in_threefold_repetition()) {
+        status = "Game over, draw by repitition"
+    }
+    else if(game.insufficient_material()) {
+        status = "Game over, draw by insufficient material";
+    }
+    else if(game.in_draw()) {
+        status = "Game over, draw by 50-move rule";
+    }
+    
+    if(gameHistory.length != game.history().length) {
+        addMoveToHistory();
+    }
+
+    $status.html(status)
+    setTimeout(function() { //has to be in a setTimeout, as board.fen() does not update until method exits
+        var fen = game.fen();
+        fen = fen.substring(0, fen.indexOf(" "));
+        if(fen != board.fen()) {
+            board.position(fen, false);
+        }
+    });
+}
+
+function addMoveToHistory() {
     gameHistory = game.history();
     if(gameHistory.length > 0) {
         var move = gameHistory[gameHistory.length - 1];
@@ -116,15 +171,6 @@ function updateStatus () {
             blackMove.onclick = function(){notationClicked(this)};
         }
     }
-
-    $status.html(status)
-    setTimeout(function() { //has to be in a setTimeout, as board.fen() does not update until method exits
-        var fen = game.fen();
-        fen = fen.substring(0, fen.indexOf(" "));
-        if(fen != board.fen()) {
-            board.position(fen, false);
-        }
-    });
 }
 
 function onDialogClose() {
@@ -152,22 +198,78 @@ function updateFormImages(white) {
     }
 }
 
+function queryState() {
+    if(!yourTurn && moveUploaded) {
+        var queryRequest = new Request("https://thegoodlifetravelguru.com/chess/php/query_game.php", {method: 'POST', body: 'id=' + boardID, headers: {"Content-Type": "application/x-www-form-urlencoded"}});
+        fetch(queryRequest)
+            .then(response => response.json()
+            .then(data => {
+                if(data.turn == player && moveUploaded) {
+                    goToHistory(gameHistory.length, null);
+                    moveUploaded = false;
+                    game.move(data.last_move);
+                    updateStatus();
+                }
+            }));
+    }
+}
+
+var initialIntervalID;
+var loaded = false;
+
+function loadCallback() {
+    if(!loaded) {
+        const loadRequest = new Request("https://thegoodlifetravelguru.com/chess/php/load_game.php", {method: "POST", body: "id=" + boardID, headers: {"Content-Type": "application/x-www-form-urlencoded"}});
+        console.log(loadRequest);
+        fetch(loadRequest).then(response => {
+            response.json().then(data => {
+                console.log(data);
+                loaded = true;
+                white_name = data.white;
+                black_name = data.black;
+                if(player == "white") {
+                    opponent_name = black_name;
+                }
+                else {
+                    opponent_name = white_name;
+                }
+                $status = $('#status')
+                $notation = $('#notation');
+                $('#white_player').text(white_name);
+                $('#black_player').text(black_name);
+                dialog = $('#piece_chooser').get()[0];
+                dialog.addEventListener('close', onDialogClose);
+                if(data.moves) {
+                    var moves_seperated = data.moves.split(";");
+                    moves_seperated.forEach(move => {
+                        game.move(move);
+                        addMoveToHistory();
+                    });
+                }
+                
+                var config = {
+                    draggable: true,
+                    position: game.fen(),
+                    onDragStart: onDragStart,
+                    onDrop: onDrop,
+                    pieceTheme: loadPiece,
+                    orientation: player
+                };
+                board = Chessboard('board1', config);
+                updateStatus();
+                if(!yourTurn) moveUploaded = true;
+                updateFormImages(player == "white");
+                setTimeout(function() {$notation.height($notation.height());});
+                setInterval(queryState, 1000);
+                clearInterval(initialIntervalID);
+            });
+        });
+    }
+}
+
 $(document).ready(function() {
-    $status = $('#status')
-    $notation = $('#notation');
-    dialog = $('#piece_chooser').get()[0];
-    dialog.addEventListener('close', onDialogClose);
-    var config = {
-        draggable: true,
-        position: 'start',
-        onDragStart: onDragStart,
-        onDrop: onDrop,
-        pieceTheme: loadPiece
-    };
-    board = Chessboard('board1', config);
-    updateStatus();
-    updateFormImages(true);
-    setTimeout(function() {$notation.height($notation.height());});
+    loadCallback();
+    initialIntervalID = setInterval(loadCallback, 5000);
 });
 
 function loadPiece(piece) {

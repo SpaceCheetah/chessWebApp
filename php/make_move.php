@@ -10,20 +10,21 @@ $id = $_POST["id"];
 $player = $_POST["player"];
 $new_move = $_POST["move"];
 $fen = $_POST["fen"];
+$client_move_num = $_POST["move_num"];
 
 if($id && $player && $new_move && $fen) {
-    $stmt = $conn->prepare("SELECT turn, moves FROM in_progress WHERE id=?");
+    $stmt = $conn->prepare("SELECT turn, moves, move_num FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    $stmt->bind_result($turn, $moves);
+    $stmt->bind_result($turn, $moves, $move_num);
     $stmt->fetch();
     $turn_converted = $turn ? "white" : "black";
-    if($turn_converted == $player) {
+    if($turn_converted == $player && $client_move_num == $move_num + 1) {
         $moves .= ";" . $new_move;
         $stmt->close();
         $turn = !$turn;
-        $stmt = $conn->prepare("UPDATE in_progress SET turn=?, moves=?, last_move=?, FEN=? WHERE id=?");
-        $stmt->bind_param("isssi", $turn, $moves, $new_move, $fen, $id);
+        $stmt = $conn->prepare("UPDATE in_progress SET turn=?, moves=?, last_move=?, FEN=?, move_num=? WHERE id=?");
+        $stmt->bind_param("isssii", $turn, $moves, $new_move, $fen, $client_move_num, $id);
         $stmt->execute();
         echo "{\"result\":\"success\"}";
     }
