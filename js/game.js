@@ -13,7 +13,11 @@ var promotionTarget = null;
 var yourTurn = false;
 var moveUploaded = false;
 var uploadInterval = null;
+var finishInterval = null;
+var queryInterval = null;
+var finishUploaded = false;
 var statusHeight = 0;
+var game_turn = null;
 
 var urlParams = new URLSearchParams(window.location.search);
 var player = urlParams.get("player");
@@ -128,10 +132,34 @@ function goToHistory(moveNum, element) {
     }
 }
 
+function finishGame(result) {
+    draggingAllowed = false;
+    clearInterval(queryInterval);
+    clearInterval(uploadInterval);
+    if(game_turn == player) {
+        setTimeout(finishGameInterval(result));
+        finishInterval = setInterval(finishGameInterval, 1000, result);
+    }
+}
+
+function finishGameInterval(result) {
+    if(!finishUploaded) {
+        var finishRequest = new Request("https://thegoodlifetravelguru.com/chess/php/finish_game.php", {method: 'POST', body: 'id=' + boardID + "&result=" + result, headers: {"Content-Type": "application/x-www-form-urlencoded"}});
+        fetch(finishRequest)
+            .then(response => response.json()
+            .then(data => {
+                if(data.result == "success" & !finishUploaded) {
+                    finishUploaded = true;
+                    clearInterval(finishInterval);
+                }
+            }));
+    }
+}
+
 function updateStatus () {
     var status = ''
 
-    var game_turn = game.turn() == 'w'? "white": "black";
+    game_turn = game.turn() == 'w'? "white": "black";
     if(game_turn == player) {
         yourTurn = true;
         status = "Your move";
@@ -147,20 +175,27 @@ function updateStatus () {
         }
     }
 
-    if(game.in_check() && !game.in_checkmate()) {
+    if(game.in_checkmate()) {
+        finishGame(game_turn == "white"? "black" : "white");
+    }
+    else if(game.in_check()) {
         status += ", check";
     }
     if(game.in_stalemate()) {
         status = "Game over, draw by stalemate";
+        finishGame("stalemate");
     }
     else if(game.in_threefold_repetition()) {
-        status = "Game over, draw by repitition"
+        status = "Game over, draw by repetition"
+        finishGame("repetition");
     }
     else if(game.insufficient_material()) {
         status = "Game over, draw by insufficient material";
+        finishGame("insufficient")
     }
     else if(game.in_draw()) {
         status = "Game over, draw by 50-move rule";
+        finishGame("50");
     }
     
     if(gameHistory.length != game.history().length) {
@@ -288,9 +323,9 @@ function loadCallback() {
                 updateStatus();
                 if(!yourTurn) moveUploaded = true;
                 updateFormImages(player == "white");
-                setInterval(queryState, 1000);
+                queryInterval = setInterval(queryState, 1000);
                 clearInterval(initialIntervalID);
-                $notation.scrollTop($notation.height());
+                setTimeout(function() {$notation.scrollTop($notation.height())});
             });
         });
     }
