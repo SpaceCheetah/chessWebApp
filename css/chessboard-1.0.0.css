@@ -1,8 +1,14 @@
-/*! chessboard.js v1.0.0 | (c) 2019 Chris Oakman | MIT License chessboardjs.com/license */
+html {
+  height: 100%;
+  width: 100%;
+}
 
 body {
     background-color: darkslategray;
     font-size: x-large;
+    margin: 0;
+    height: 100%;
+    width: 100%;
 }
 
 .clearfix-7da63 {
@@ -91,18 +97,24 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: center;
+    height: 100%;
+    width: 100%;
 }
 
 #board_holder {
   flex: 0 0 auto;
   padding-right: 3%;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 #sidebar {
-    flex: 0 0 auto;
-    background-color: white;
-    width: 25%;
-    height: 99vh;
+  flex: 0 0 auto;
+  background-color: white;
+  width: 25%;
+  height: 99vh;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 #notation {
@@ -111,14 +123,16 @@ body {
 }
 
 #white_player, #black_player {
-  flex: 1 0 0;
+  flex: 0 0 auto;
 }
 
 #vs {
-  flex: 2 0 0;
+  flex: 0 0 auto;
   text-align: center;
   margin-top: auto;
   margin-bottom: auto;
+  margin-left: 1ex;
+  margin-right: 1ex;
 }
 
 #status {
@@ -130,9 +144,9 @@ body {
 #player_indicator {
   display: flex;
   flex-direction: row;
-  margin: auto;
-  width: 80%;
   padding-top: 5px;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
 }
 
 #piece_chooser::backdrop {
