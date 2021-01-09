@@ -88,24 +88,26 @@ body {
 }
 
 #game {
-    width: 80%;
-    height: 90%;
     display: flex;
     flex-direction: row;
-    margin: auto;
+    justify-content: center;
 }
 
 #board_holder {
-  flex: 50 0 auto;
+  flex: 0 0 auto;
   padding-right: 3%;
 }
 
-#notation {
-    flex: 1 0 auto;
+#sidebar {
+    flex: 0 0 auto;
     background-color: white;
     width: 25%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    height: 99vh;
+}
+
+#notation {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #white_player, #black_player {

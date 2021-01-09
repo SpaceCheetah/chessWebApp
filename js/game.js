@@ -2,6 +2,9 @@ var board = null;
 var game = new Chess();
 var $status = null;
 var $notation = null;
+var $board_holder = null;;
+var $sidebar = null;
+var $player_indicator = null;
 var dialog = null;
 var draggingAllowed = true;
 var gameHistory = [];
@@ -10,6 +13,7 @@ var promotionTarget = null;
 var yourTurn = false;
 var moveUploaded = false;
 var uploadInterval = null;
+var statusHeight = 0;
 
 var urlParams = new URLSearchParams(window.location.search);
 var player = urlParams.get("player");
@@ -32,6 +36,22 @@ var bR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAw
 var bQ = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIHN0cm9rZT0ibm9uZSI+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMTQiIGN5PSI5IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMjIuNSIgY3k9IjgiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzMSIgY3k9IjkiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzOSIgY3k9IjEyIiByPSIyLjc1Ii8+PC9nPjxwYXRoIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi41LTEyLjVMMzEgMjVsLS4zLTE0LjEtNS4yIDEzLjYtMy0xNC41LTMgMTQuNS01LjItMTMuNkwxNCAyNSA2LjUgMTMuNSA5IDI2eiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNOSAyNmMwIDIgMS41IDIgMi41IDQgMSAxLjUgMSAxIC41IDMuNS0xLjUgMS0xLjUgMi41LTEuNSAyLjUtMS41IDEuNS41IDIuNS41IDIuNSA2LjUgMSAxNi41IDEgMjMgMCAwIDAgMS41LTEgMC0yLjUgMCAwIC41LTEuNS0xLTIuNS0uNS0yLjUtLjUtMiAuNS0zLjUgMS0yIDIuNS0yIDIuNS00LTguNS0xLjUtMTguNS0xLjUtMjcgMHoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTExIDM4LjVhMzUgMzUgMSAwIDAgMjMgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNMTEgMjlhMzUgMzUgMSAwIDEgMjMgMG0tMjEuNSAyLjVoMjBtLTIxIDNhMzUgMzUgMSAwIDAgMjIgMG0tMjMgM2EzNSAzNSAxIDAgMCAyNCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiLz48L2c+PC9zdmc+';
 var bK = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjYiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMjIuNSAyNXM0LjUtNy41IDMtMTAuNWMwIDAtMS0yLjUtMy0yLjVzLTMgMi41LTMgMi41Yy0xLjUgMyAzIDEwLjUgMyAxMC41IiBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjxwYXRoIGQ9Ik0xMS41IDM3YzUuNSAzLjUgMTUuNSAzLjUgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMFYzN3oiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMyIDI5LjVzOC41LTQgNi4wMy05LjY1QzM0LjE1IDE0IDI1IDE4IDIyLjUgMjQuNWwuMDEgMi4xLS4wMS0yLjFDMjAgMTggOS45MDYgMTQgNi45OTcgMTkuODVjLTIuNDk3IDUuNjUgNC44NTMgOSA0Ljg1MyA5IiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiIHN0cm9rZT0iI2VjZWNlYyIvPjwvZz48L3N2Zz4=';
 
+function resizeBoard() {
+    if(window.innerHeight < window.innerWidth * 0.7) {
+        $board_holder.width("99vh");
+        $sidebar.height("99vh");
+    }
+    else {
+        $board_holder.width('70vw');
+        $sidebar.height('70vw');
+    }
+    board.resize();
+
+    $notation.height($sidebar.height() - $player_indicator.height() - statusHeight - 7);
+}
+
+window.onresize = resizeBoard;
+
 function onDragStart (source, piece, position, orientation) {
     if(!(draggingAllowed && yourTurn)) return false;
     // do not pick up pieces if the game is over
@@ -49,7 +69,7 @@ function onDrop (source, target) {
     var move = game.move({
       from: source,
       to: target,
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      promotion: 'q'
     })
   
     // illegal move
@@ -145,14 +165,19 @@ function updateStatus () {
     
     if(gameHistory.length != game.history().length) {
         addMoveToHistory();
+        $notation.scrollTop($notation.height());
     }
 
-    $status.html(status)
+    $status.html(status);
     setTimeout(function() { //has to be in a setTimeout, as board.fen() does not update until method exits
         var fen = game.fen();
         fen = fen.substring(0, fen.indexOf(" "));
         if(fen != board.fen()) {
             board.position(fen, false);
+        }
+        if(statusHeight != $status.height()) {
+            statusHeight = $status.height();
+            resizeBoard();
         }
     });
 }
@@ -165,7 +190,7 @@ function addMoveToHistory() {
             $notation.append("<div class=\"notation_row\"><span class=\"notation_number\">" + Math.ceil(gameHistory.length / 2) + "</span><span class=\"white_move hover\" onclick=\"notationClicked(this)\">" + move + "</span><span class=\"black_move\"></span></div>");
         }
         else {
-            var blackMove = $($($notation.children().toArray()[Math.floor(gameHistory.length / 2) + 1]).children().toArray()[2]).get()[0];
+            var blackMove = $($($notation.children().toArray()[Math.floor(gameHistory.length / 2) - 1]).children().toArray()[2]).get()[0];
             blackMove.innerText = move;
             blackMove.className = "black_move hover";
             blackMove.onclick = function(){notationClicked(this)};
@@ -209,6 +234,7 @@ function queryState() {
                     moveUploaded = false;
                     game.move(data.last_move);
                     updateStatus();
+                    $notation.scrollTop($notation.height());
                 }
             }));
     }
@@ -233,8 +259,11 @@ function loadCallback() {
                 else {
                     opponent_name = white_name;
                 }
-                $status = $('#status')
+                $status = $('#status');
                 $notation = $('#notation');
+                $board_holder = $('#board_holder');
+                $sidebar = $('#sidebar');
+                $player_indicator = $('#player_indicator');
                 $('#white_player').text(white_name);
                 $('#black_player').text(black_name);
                 dialog = $('#piece_chooser').get()[0];
@@ -259,9 +288,9 @@ function loadCallback() {
                 updateStatus();
                 if(!yourTurn) moveUploaded = true;
                 updateFormImages(player == "white");
-                setTimeout(function() {$notation.height($notation.height());});
                 setInterval(queryState, 1000);
                 clearInterval(initialIntervalID);
+                $notation.scrollTop($notation.height());
             });
         });
     }
