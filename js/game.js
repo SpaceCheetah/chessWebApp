@@ -1,13 +1,19 @@
-var board = null;
-var game = new Chess();
 var $status = null;
 var $notation = null;
 var $board_holder = null;;
 var $sidebar = null;
 var $player_indicator = null;
+var $captured_pieces = null;
+var $white_pieces = null;
+var $black_pieces = null;
+var $eval = null;
+
+var board = null;
+var game = new Chess();
 var dialog = null;
 var draggingAllowed = true;
 var gameHistory = [];
+var captureHistory = [];
 var promotionStart = null;
 var promotionTarget = null;
 var yourTurn = false;
@@ -51,7 +57,7 @@ function resizeBoard() {
     }
     board.resize();
 
-    $notation.height($sidebar.height() - $player_indicator.height() - statusHeight - 7);
+    $notation.height($sidebar.height() - $player_indicator.height() - statusHeight - 7 - $captured_pieces.height());
 }
 
 window.onresize = resizeBoard;
@@ -78,7 +84,7 @@ function onDrop (source, target) {
   
     // illegal move
     if (move === null) return 'snapback'
-    else if(move.flags.indexOf('p') != -1) {
+    else if(move.promotion) {
         game.undo();
         promotionStart = source;
         promotionTarget = target;
@@ -95,7 +101,7 @@ function onDrop (source, target) {
 function uploadMove() {
     if(!moveUploaded) {
         var uploadRequest = new Request("https://thegoodlifetravelguru.com/chess/php/make_move.php",
-            {method: 'POST', body: 'id=' + boardID + "&player=" + player + "&move=" + encodeURIComponent(gameHistory[gameHistory.length - 1]) + "&fen=" + encodeURIComponent(game.fen()) + "&move_num=" + gameHistory.length,
+            {method: 'POST', body: 'id=' + boardID + "&player=" + player + "&move=" + encodeURIComponent(gameHistory[gameHistory.length - 1].san) + "&fen=" + encodeURIComponent(game.fen()) + "&move_num=" + gameHistory.length,
             headers: {"Content-Type": "application/x-www-form-urlencoded"}});
         fetch(uploadRequest)
             .then(response => response.json()
@@ -106,6 +112,51 @@ function uploadMove() {
                 }
             }));
     }
+}
+
+function createCapturedPiece(num, src) {
+    let piece = document.createElement("span");
+    piece.className = "captured_piece";
+    let img = document.createElement("img");
+    img.className = "captured_piece_img";
+    img.src = src;
+    piece.appendChild(img);
+    piece.appendChild(document.createTextNode(num));
+    return piece;
+}
+
+function clearElementChildren(element) {
+    while(element.firstChild) {
+        element.removeChild(element.lastChild);
+    }
+}
+
+function setCapturedPieces(container, pieces, white) {
+    clearElementChildren(container);
+    if(pieces.p != 0) {
+        container.appendChild(createCapturedPiece(pieces.p, white ? wP : bP));
+    }
+    if(pieces.n != 0) {
+        container.appendChild(createCapturedPiece(pieces.n, white ? wN : bN));
+    }
+    if(pieces.b != 0) {
+        container.appendChild(createCapturedPiece(pieces.b, white ? wB : bB));
+    }
+    if(pieces.r != 0) {
+        container.appendChild(createCapturedPiece(pieces.r, white ? wR : bR));
+    }
+    if(pieces.q != 0) {
+        container.appendChild(createCapturedPiece(pieces.q, white ? wQ : bQ));
+    }
+}
+
+function setCapturedPiecesToIndex(index) {
+    var ch = captureHistory[index];
+    var total = ch["total"].toString();
+    if(total > 0) total = "+" + total;
+    $eval.html(total);
+    setCapturedPieces(document.getElementById("white_pieces"), ch["w"], true);
+    setCapturedPieces(document.getElementById("black_pieces"), ch["b"], false);
 }
 
 function notationClicked(element) {
@@ -123,6 +174,7 @@ function goToHistory(moveNum, element) {
             game.move(gameHistory[i]);
         }
         board.position(game.fen(), true);
+        setCapturedPiecesToIndex(moveNum - 1);
     }
     if(moveNum == gameHistory.length) {
         draggingAllowed = true;
@@ -217,19 +269,64 @@ function updateStatus () {
     });
 }
 
+function getValue(piece) {
+    switch(piece) {
+        case "p": {
+            return 1;
+        }
+        case "n": case "b": {
+            return 3;
+        }
+        case "r": {
+            return 5;
+        }
+        case "q": {
+            return 9;
+        }
+        default: {
+            return 0;
+        }
+    }
+}
+
 function addMoveToHistory() {
-    gameHistory = game.history();
+    gameHistory = game.history({verbose: true});
     if(gameHistory.length > 0) {
         var move = gameHistory[gameHistory.length - 1];
         if(game.turn() == 'b') {
-            $notation.append("<div class=\"notation_row\"><span class=\"notation_number\">" + Math.ceil(gameHistory.length / 2) + "</span><span class=\"white_move hover\" onclick=\"notationClicked(this)\">" + move + "</span><span class=\"black_move\"></span></div>");
+            $notation.append("<div class=\"notation_row\"><span class=\"notation_number\">" + Math.ceil(gameHistory.length / 2) + "</span><span class=\"white_move hover\" onclick=\"notationClicked(this)\">" + move.san + "</span><span class=\"black_move\"></span></div>");
         }
         else {
             var blackMove = $($($notation.children().toArray()[Math.floor(gameHistory.length / 2) - 1]).children().toArray()[2]).get()[0];
-            blackMove.innerText = move;
+            blackMove.innerText = move.san;
             blackMove.className = "black_move hover";
             blackMove.onclick = function(){notationClicked(this)};
         }
+        if(captureHistory.length > 0) {
+            captureHistory.push(jQuery.extend(true, {}, captureHistory[captureHistory.length - 1]));
+        }
+        else {
+            captureHistory[0] = {"b": {"p": 0, "n": 0, "b": 0, "r": 0, "q": 0}, "w": {"p": 0, "n": 0, "b": 0, "r": 0, "q": 0}, "total": 0};
+        }
+        var ch = captureHistory[captureHistory.length - 1];
+        if(move.captured) {
+            ch[game.turn()][move.captured] ++;
+            if(game.turn() == 'b') {
+                ch.total += getValue(move.captured);
+            }
+            else {
+                ch.total -= getValue(move.captured);
+            }
+        }
+        if(move.promotion) {
+            if(game.turn() == 'b') {
+                ch.total += getValue(move.promotion) - 1; //-1 for pawn
+            }
+            else {
+                ch.total -= getValue(move.promotion) - 1;
+            }
+        }
+        setCapturedPiecesToIndex(captureHistory.length - 1);
     }
 }
 
@@ -240,6 +337,8 @@ function onDialogClose() {
         promotion: dialog.returnValue
     });
     updateStatus();
+    setTimeout(uploadMove());
+    uploadInterval = setInterval(uploadMove, 1000);
 }
 
 function updateFormImages(white) {
@@ -286,8 +385,8 @@ function loadCallback() {
             response.json().then(data => {
                 console.log(data);
                 loaded = true;
-                white_name = data.white;
-                black_name = data.black;
+                white_name = data.white ? data.white : "Anonymous";
+                black_name = data.black ? data.black : "Anonymous";
                 if(player == "white") {
                     opponent_name = black_name;
                 }
@@ -299,6 +398,10 @@ function loadCallback() {
                 $board_holder = $('#board_holder');
                 $sidebar = $('#sidebar');
                 $player_indicator = $('#player_indicator');
+                $captured_pieces = $('#captured_pieces');
+                $white_pieces = $('#white_pieces');
+                $black_pieces = $('#black_pieces');
+                $eval = $('#eval'); 
                 $('#white_player').text(white_name);
                 $('#black_player').text(black_name);
                 dialog = $('#piece_chooser').get()[0];

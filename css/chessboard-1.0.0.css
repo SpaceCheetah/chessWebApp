@@ -93,6 +93,47 @@ body {
   color: white;
 }
 
+.captured_piece {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.captured_piece_img {
+  width: 1em;
+  height: 1em;
+}
+
+#captured_pieces {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid #d9d9d9;
+  min-height: 2.5em;
+  display: flex;
+  flex-direction: row;
+  background-color: #f7f6f5;
+}
+
+#white_pieces, #black_pieces {
+  flex: 0 0 45.5%;
+}
+
+#white_pieces, #black_pieces, #eval {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
+
+#eval {
+  border-left: 1px solid #d9d9d9;
+  border-right: 1px solid #d9d9d9;
+  flex: 0 0 9%;
+  text-align: center;
+}
+
 #game {
     display: flex;
     flex-direction: row;
@@ -115,6 +156,7 @@ body {
   height: 99vh;
   margin-top: auto;
   margin-bottom: auto;
+  position: relative;
 }
 
 #notation {
