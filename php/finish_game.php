@@ -10,13 +10,13 @@ $id = $_POST["id"];
 $reason = $_POST["result"];
 
 if($id && $reason) {
-    $stmt = $conn->prepare("SELECT white, black, moves, FEN, white_id, black_id FROM in_progress WHERE id=?");
+    $stmt = $conn->prepare("SELECT moves, FEN, white_id, black_id FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
     if($stmt->execute()) {
         $result = $stmt->get_result()->fetch_assoc();
         $stmt->close();
-        $stmt = $conn->prepare("INSERT INTO finished_games (white, black, moves, result, FEN, white_id, black_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $result["white"], $result["black"], $result["moves"], $reason, $result["FEN"], $result["white_id"], $result["black_id"]);
+        $stmt = $conn->prepare("INSERT INTO finished_games (moves, result, FEN, white_id, black_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $result["moves"], $reason, $result["FEN"], $result["white_id"], $result["black_id"]);
         if($stmt->execute()) {
             echo "{\"result\": \"success\"}";
             $stmt->close();
@@ -25,7 +25,7 @@ if($id && $reason) {
             $stmt->execute();
         }
         else {
-            echo "{\"result\": \"failure\", \"reason\": \"" + $stmt->error + "\"}";
+            echo "{\"result\": \"failure\", \"reason\": \"" . $stmt->error . "\"}";
         }
     }
 }

@@ -8,11 +8,26 @@ if(!$conn) {
 
 $id = $_POST["id"];
 if($id) {
-    $stmt = $conn->stmt_init();
-    $stmt->prepare("SELECT white, black, moves FROM in_progress WHERE id=?");
+    $stmt = $conn->prepare("SELECT white_id, black_id, moves FROM in_progress WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    echo json_encode($stmt->get_result()->fetch_assoc());
+    $stmt->bind_result($white_id, $black_id, $moves);
+    $stmt->fetch();
     $stmt->close();
+    $stmt = $conn->prepare("SELECT id, name FROM names WHERE id=? OR id=?");
+    $stmt->bind_param("ss", $white_id, $black_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $white = null;
+    $black = null;
+    while($row = $result->fetch_assoc()) {
+        if($row['id'] == $white_id) {
+            $white = $row['name'];
+        }
+        else {
+            $black = $row['name'];
+        }
+    }
+    echo json_encode(array("moves" => $moves, "white" => $white, "black" => $black));
 }
 ?>
